@@ -8,6 +8,12 @@
 import SwiftUI
 
 struct ContentView: View {
+    let peerService: PeerService
+    
+    init(peerService: PeerService) {
+        self.peerService = peerService
+    }
+    
     var body: some View {
         VStack {
             Image(systemName: "globe")
@@ -16,9 +22,12 @@ struct ContentView: View {
             Text("Hello, world!")
         }
         .padding()
+        .onAppear {
+            peerService.start()
+        }
     }
 }
 
 #Preview {
-    ContentView()
+    ContentView(peerService: PeerServiceFakeImpl())
 }

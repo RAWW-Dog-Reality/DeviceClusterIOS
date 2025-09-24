@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct DeviceClusterApp: App {
+    private let container = AppContainer()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            container.makeHomeView()
         }
     }
 }
