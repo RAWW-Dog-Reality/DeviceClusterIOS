@@ -12,7 +12,10 @@ protocol ObservePeersUseCase {
 final class ObservePeersUseCaseFakeImpl: ObservePeersUseCase {
     func execute() -> AsyncStream<[Peer]> {
         AsyncStream { continuation in
-            continuation.yield([.init(id: "1"), .init(id: "2")])
+            continuation.yield([
+                .init(id: "1", isConnected: true),
+                .init(id: "2", isConnected: false)
+            ])
             continuation.finish()
         }
     }

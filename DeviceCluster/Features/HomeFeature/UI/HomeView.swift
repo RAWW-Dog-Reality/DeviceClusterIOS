@@ -18,13 +18,48 @@ struct HomeView: View {
         @Bindable var vm = vm
         
         VStack {
-            ForEach(vm.peers, id: \.self) { peer in
-                Text(peer.id)
+            Text("Device Cluster")
+                .font(.title)
+            Spacer(minLength: 16)
+            VStack(alignment: .leading) {
+                Text("Found Device IDs")
+                    .font(.headline)
+                    .padding(.horizontal, 16)
+                ScrollView {
+                    VStack(alignment: .leading) {
+                        ForEach(vm.peers, id: \.self) { peer in
+                            Button(action: {
+                                vm.peerIdClicked(peer.id)
+                            }, label: {
+                                HStack {
+                                    Text(peer.id)
+                                        .font(.callout)
+                                        .foregroundStyle(.black)
+                                    Spacer(minLength: 16)
+                                    if peer.isConnected {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                            })
+                            .frame(height: 36)
+                            .padding(.horizontal, 8)
+                            Divider()
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(.gray.opacity(0.3))
+                .cornerRadius(16)
+                .padding(.horizontal, 16)
             }
         }
-        .padding()
+        .background(.white)
         .onAppear(perform: vm.willAppear)
         .onDisappear(perform: vm.didDisappear)
+        .loadingOverlay(isPresented: $vm.isLoading)
+        .errorAlert(error: $vm.error)
     }
 }
 

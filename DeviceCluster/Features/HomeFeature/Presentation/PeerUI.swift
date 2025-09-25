@@ -7,4 +7,5 @@
 
 struct PeerUI: Hashable {
     let id: String
+    let isConnected: Bool
 }

@@ -40,7 +40,7 @@ final class HomeViewModel {
         peersTask = Task { [weak self] in
             guard let self else { return }
             for await items in observePeers.execute() {
-                self.peers = items.map { .init(id: $0.id) }
+                self.peers = items.map { .init(id: $0.id, isConnected: $0.isConnected) }
             }
         }
     }
@@ -48,5 +48,18 @@ final class HomeViewModel {
     func didDisappear() {
         peersTask?.cancel()
         peersTask = nil
+    }
+    
+    func peerIdClicked(_ peerId: String) {
+        isLoading.toggle()
+        Task {
+            do {
+                try await connectWithPeer.execute(peerID: peerId)
+                isLoading.toggle()
+            } catch {
+                isLoading.toggle()
+                self.error = error.localizedDescription
+            }
+        }
     }
 }

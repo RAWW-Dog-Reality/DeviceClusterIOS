@@ -11,7 +11,6 @@ protocol PeerRepository {
     func getMySavedPeerID() async throws -> String?
     func save(myPeerID: String) async throws
     func startObservingPeers(myPeerID: String)
-    func getPeers() -> [Peer]
     func connect(with peerID: String) async throws
     func observePeers() -> AsyncStream<[Peer]>
 }
@@ -42,10 +41,6 @@ final class PeerRepositoryImpl: PeerRepository {
         peerService.start(myPeerID: myPeerID)
     }
     
-    func getPeers() -> [Peer] {
-        peerService.peers.map { .init(id: $0.id) }
-    }
-    
     func connect(with peerID: String) async throws {
         try await peerService.connect(with: peerID)
     }
@@ -55,7 +50,8 @@ final class PeerRepositoryImpl: PeerRepository {
         return AsyncStream { continuation in
             let task = Task {
                 for await items in stream {
-                    let mapped = items.map { Peer(id: $0.id) }
+                    let mapped = items.map { Peer(id: $0.getID(),
+                                                  isConnected: $0.isConnected) }
                     continuation.yield(mapped)
                 }
                 continuation.finish()

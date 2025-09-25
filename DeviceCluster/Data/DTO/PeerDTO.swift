@@ -5,14 +5,15 @@
 //  Created by Daniyar Kurmanbayev on 2025-09-25.
 //
 
+import MultipeerConnectivity
+
 struct PeerDTO {
-    let id: String
-    var connectionStatus: ConnectionStatus = .disconnected
+    let peerID: MCPeerID
+    var isConnected = false
 }
 
 extension PeerDTO {
-    enum ConnectionStatus {
-        case connected
-        case disconnected
+    func getID() -> String {
+        peerID.displayName
     }
 }

@@ -7,4 +7,5 @@
 
 struct Peer {
     let id: String
+    let isConnected: Bool
 }

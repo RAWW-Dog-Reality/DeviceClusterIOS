@@ -13,7 +13,6 @@ protocol PeerService {
     func start(myPeerID: String)
     func stop()
     func connect(with peerID: String) async throws
-    var peers: [PeerDTO] { get }
     func peersStream() -> AsyncStream<[PeerDTO]>
 }
 
@@ -24,7 +23,7 @@ final class PeerServiceImpl: NSObject, PeerService, ObservableObject {
     private var advertiser: MCNearbyServiceAdvertiser?
     private var browser: MCNearbyServiceBrowser?
 
-    @Published private(set) var peers: [PeerDTO] = []
+    @Published private var peers: [PeerDTO] = []
     
     func start(myPeerID: String) {
         let peer = MCPeerID(displayName: myPeerID)
@@ -61,19 +60,24 @@ final class PeerServiceImpl: NSObject, PeerService, ObservableObject {
     }
     
     func connect(with peerID: String) async throws {
-        guard let session = session else { return }
-        let peer = MCPeerID(displayName: peerID)
+        guard let session = session,
+              let peer = peers.first(where: { $0.getID() == peerID })
+        else { return }
+        
         let timeout = 20
         var timeElapsed = 0
-        browser?.invitePeer(peer, to: session, withContext: nil, timeout: 20)
+        
+        browser?.invitePeer(peer.peerID, to: session, withContext: nil, timeout: 20)
+        
         while true {
             if timeElapsed >= timeout {
-                Logger.log("Timed out waiting to connect to peer=\(peer.displayName)", level: .error)
+                Logger.log("Timed out waiting to connect to peer=\(peer.getID())", level: .error)
                 throw DataError.failedToConnectWithPeer
             }
-            let peer = peers.first(where: { $0.id == peer.displayName })
-            let connectionStatus = peer?.connectionStatus ?? .disconnected
-            if connectionStatus == .connected {
+            
+            let peer = peers.first(where: { $0.getID() == peer.getID() })
+            
+            if peer?.isConnected ?? false {
                 break
             } else {
                 try await Task.sleep(for: .seconds(1))
@@ -113,17 +117,13 @@ extension PeerServiceImpl: MCNearbyServiceAdvertiserDelegate {
 
 extension PeerServiceImpl: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo: [String : String]?) {
-        guard let myPeer = myPeer else { return }
+        guard let myPeer = myPeer, peerID != myPeer else { return }
         
-        if peerID != myPeer {
-            let id = peerID.displayName
-            
-            if !peers.contains(where: { $0.id == id }) {
-                peers.append(.init(id: id))
-            }
-            
-            Logger.log("Found peer=\(peerID.displayName)")
+        if !peers.contains(where: { $0.getID() == peerID.displayName }) {
+            peers.append(.init(peerID: peerID))
         }
+        
+        Logger.log("Found peer=\(peerID.displayName)")
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
@@ -131,9 +131,7 @@ extension PeerServiceImpl: MCNearbyServiceBrowserDelegate {
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
-        let id = peerID.displayName
-        
-        if let idIndex = peers.firstIndex(where: { $0.id == id }) {
+        if let idIndex = peers.firstIndex(where: { $0.getID() == peerID.displayName }) {
             peers.remove(at: idIndex)
         }
         
@@ -144,12 +142,12 @@ extension PeerServiceImpl: MCNearbyServiceBrowserDelegate {
 extension PeerServiceImpl: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
         Logger.log("MCSession state changed — peer=\(peerID.displayName) state=\(state.description)")
-        if let peerIndex = peers.firstIndex(where: { $0.id == peerID.displayName }) {
+        if let peerIndex = peers.firstIndex(where: { $0.getID() == peerID.displayName }) {
             switch state {
             case .connected:
-                peers[peerIndex].connectionStatus = .connected
+                peers[peerIndex].isConnected = true
             default:
-                peers[peerIndex].connectionStatus = .disconnected
+                peers[peerIndex].isConnected = false
             }
         }
     }
