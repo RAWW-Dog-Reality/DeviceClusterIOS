@@ -7,6 +7,7 @@
 
 import Observation
 import SwiftUI
+import Foundation
 
 @Observable
 @MainActor
@@ -15,20 +16,24 @@ final class HomeViewModel {
     @ObservationIgnored private let startObservingPeers: StartObservingPeersUseCase
     @ObservationIgnored private let connectWithPeer: ConnectWithPeerUseCase
     @ObservationIgnored private let observePeers: ObservePeersUseCase
+    @ObservationIgnored private let sendTestAudio: SendTestAudioUseCase
     private var peersTask: Task<Void, Never>?
     
     var isLoading = false
     var error: String?
     var peers: [PeerUI] = []
+    var hasConnectedPeer: Bool { peers.contains(where: { $0.isConnected }) }
     
     init(router: Router,
          startObservingPeers: StartObservingPeersUseCase,
          observePeers: ObservePeersUseCase,
-         connectWithPeer: ConnectWithPeerUseCase) {
+         connectWithPeer: ConnectWithPeerUseCase,
+         sendTestAudio: SendTestAudioUseCase) {
         self.router = router
         self.startObservingPeers = startObservingPeers
         self.observePeers = observePeers
         self.connectWithPeer = connectWithPeer
+        self.sendTestAudio = sendTestAudio
     }
 
     func willAppear() {
@@ -58,6 +63,20 @@ final class HomeViewModel {
                 isLoading.toggle()
             } catch {
                 isLoading.toggle()
+                self.error = error.localizedDescription
+            }
+        }
+    }
+    
+    func sendTestAudioTapped() {
+        isLoading = true
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await sendTestAudio.execute()
+                isLoading = false
+            } catch {
+                isLoading = false
                 self.error = error.localizedDescription
             }
         }

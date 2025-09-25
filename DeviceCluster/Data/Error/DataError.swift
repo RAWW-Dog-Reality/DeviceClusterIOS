@@ -11,6 +11,8 @@ enum DataError: LocalizedError {
     case generic
     case noPeedID
     case failedToConnectWithPeer
+    case noActiveSession
+    case noConnectedPeers
     
     var errorDescription: String? {
         switch self {
@@ -20,6 +22,10 @@ enum DataError: LocalizedError {
             return "No peer ID. Please try again."
         case .failedToConnectWithPeer:
             return "Failed to connect with peer. Please try again."
+        case .noActiveSession:
+            return "No active session. Please try again."
+        case .noConnectedPeers:
+            return "No connected peers. Please try again."
         }
     }
 }

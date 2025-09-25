@@ -8,12 +8,14 @@
 import SwiftUI
 import MultipeerConnectivity
 import Combine
+import Foundation
 
 protocol PeerService {
     func start(myPeerID: String)
     func stop()
     func connect(with peerID: String) async throws
     func peersStream() -> AsyncStream<[PeerDTO]>
+    func sendDataToConnectedPeers(_ data: Data) throws
 }
 
 @MainActor
@@ -96,6 +98,24 @@ final class PeerServiceImpl: NSObject, PeerService, ObservableObject {
             }
         }
     }
+    
+    func sendDataToConnectedPeers(_ data: Data) throws {
+        Logger.log("Sending data to \(session?.connectedPeers.count ?? 0) connected peers")
+        
+        guard let session = session else {
+            Logger.log("No active session to send data to", level: .error)
+            throw DataError.noActiveSession
+        }
+        let connected = session.connectedPeers
+        
+        guard !connected.isEmpty else {
+            Logger.log("No connected peers to send data to", level: .error)
+            throw DataError.noConnectedPeers
+        }
+        
+        try session.send(data, toPeers: connected, with: .reliable)
+        Logger.log("Data sent to \(connected.count) connected peers")
+    }
 }
 
 extension PeerServiceImpl: MCNearbyServiceAdvertiserDelegate {
@@ -152,8 +172,11 @@ extension PeerServiceImpl: MCSessionDelegate {
         }
     }
     
-    func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {}
+    func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
+        Logger.log("Received data from peer=\(peerID.displayName)")
+    }
     func session(_ session: MCSession, didReceive stream: InputStream, withName: String, fromPeer: MCPeerID) { }
     func session(_ session: MCSession, didStartReceivingResourceWithName: String, fromPeer: MCPeerID, with: Progress) { }
     func session(_ session: MCSession, didFinishReceivingResourceWithName: String, fromPeer: MCPeerID, at: URL?, withError: Error?) { }
 }
+

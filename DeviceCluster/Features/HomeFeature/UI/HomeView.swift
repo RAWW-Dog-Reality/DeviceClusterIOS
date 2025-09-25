@@ -17,7 +17,7 @@ struct HomeView: View {
     var body: some View {
         @Bindable var vm = vm
         
-        VStack {
+        VStack(spacing: 0) {
             Text("Device Cluster")
                 .font(.title)
             Spacer(minLength: 16)
@@ -34,7 +34,6 @@ struct HomeView: View {
                                 HStack {
                                     Text(peer.id)
                                         .font(.callout)
-                                        .foregroundStyle(.black)
                                     Spacer(minLength: 16)
                                     if peer.isConnected {
                                         Image(systemName: "checkmark.circle.fill")
@@ -54,8 +53,19 @@ struct HomeView: View {
                 .cornerRadius(16)
                 .padding(.horizontal, 16)
             }
+            Spacer(minLength: 16)
+            if vm.hasConnectedPeer {
+                Button(action: { vm.sendTestAudioTapped() }) {
+                    Text("Send Test Audio")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
         }
-        .background(.white)
         .onAppear(perform: vm.willAppear)
         .onDisappear(perform: vm.didDisappear)
         .loadingOverlay(isPresented: $vm.isLoading)
@@ -67,5 +77,6 @@ struct HomeView: View {
     HomeView(vm: .init(router: .init(),
                        startObservingPeers: StartObservingPeersUseCaseFakeImpl(),
                        observePeers: ObservePeersUseCaseFakeImpl(),
-                       connectWithPeer: ConnectWithPeerUseCaseFakeImpl()))
+                       connectWithPeer: ConnectWithPeerUseCaseFakeImpl(),
+                       sendTestAudio: SendTestAudioUseCaseFakeImpl()))
 }

@@ -44,12 +44,18 @@ final class AppContainer {
         ObservePeersUseCaseImpl(peerRepository: makePeerRepository())
     }
     
+    private func makeSendTestAudioUseCase() -> SendTestAudioUseCase {
+        SendTestAudioUseCaseImpl(peerRepository: makePeerRepository())
+    }
+    
 //    MARK: - Features
     func makeHomeView(router: Router) -> some View {
         let vm = HomeViewModel(router: router,
                                startObservingPeers: makeStartObservingPeersUseCase(),
                                observePeers: makeObservePeersUseCase(),
-                               connectWithPeer: makeConnectWithPeerUseCase())
+                               connectWithPeer: makeConnectWithPeerUseCase(),
+                               sendTestAudio: makeSendTestAudioUseCase())
         return HomeView(vm: vm)
     }
 }
+

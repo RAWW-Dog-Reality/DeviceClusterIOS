@@ -13,6 +13,7 @@ protocol PeerRepository {
     func startObservingPeers(myPeerID: String)
     func connect(with peerID: String) async throws
     func observePeers() -> AsyncStream<[Peer]>
+    func sendDataToConnectedPeers(_ data: Data) throws
 }
 
 final class PeerRepositoryImpl: PeerRepository {
@@ -60,5 +61,9 @@ final class PeerRepositoryImpl: PeerRepository {
                 task.cancel()
             }
         }
+    }
+    
+    func sendDataToConnectedPeers(_ data: Data) throws {
+        try peerService.sendDataToConnectedPeers(data)
     }
 }
