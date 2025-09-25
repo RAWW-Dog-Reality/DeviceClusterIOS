@@ -9,12 +9,12 @@ import Foundation
 
 struct Constants {
     struct AppConfiguration {
-        static let serviceName: String = "device-cluster"
-        
+        static let serviceName = "device-cluster"
+        static let peerIDPrefix = "DCPEERID-"
     }
     
     struct Storage {
-        static let secureStorageServiceName = "\(Bundle.main.bundleIdentifier ?? "com.DeviceCluster").secureStorage.v2"
+        static let secureStorageServiceName = "\(Bundle.main.bundleIdentifier ?? "com.DeviceCluster").secureStorage.v5"
         
         struct Keys {
             static let peerID = "peerID"
