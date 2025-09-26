@@ -26,7 +26,7 @@ struct DCScreenLoadingModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .allowsHitTesting(!isPresented) // block interactions while loading
+            .allowsHitTesting(!isPresented)
             .overlay(alignment: .center) {
                 if isPresented {
                     DCScreenLoader()

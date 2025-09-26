@@ -14,6 +14,7 @@ protocol PeerRepository {
     func connect(with peerID: String) async throws
     func observePeers() -> AsyncStream<[Peer]>
     func sendDataToConnectedPeers(_ data: Data) throws
+    func observeIncomingData() -> AsyncStream<Data>
 }
 
 final class PeerRepositoryImpl: PeerRepository {
@@ -65,5 +66,9 @@ final class PeerRepositoryImpl: PeerRepository {
     
     func sendDataToConnectedPeers(_ data: Data) throws {
         try peerService.sendDataToConnectedPeers(data)
+    }
+    
+    func observeIncomingData() -> AsyncStream<Data> {
+        return peerService.incomingDataStream()
     }
 }

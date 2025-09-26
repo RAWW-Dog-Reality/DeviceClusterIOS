@@ -65,6 +65,17 @@ struct HomeView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
+            if vm.hasAudio {
+                Button(action: { vm.playReceivedAudioTapped() }) {
+                    Text("Play received audio")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.bordered)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
         }
         .onAppear(perform: vm.willAppear)
         .onDisappear(perform: vm.didDisappear)
@@ -78,5 +89,6 @@ struct HomeView: View {
                        startObservingPeers: StartObservingPeersUseCaseFakeImpl(),
                        observePeers: ObservePeersUseCaseFakeImpl(),
                        connectWithPeer: ConnectWithPeerUseCaseFakeImpl(),
-                       sendTestAudio: SendTestAudioUseCaseFakeImpl()))
+                       sendTestAudio: SendTestAudioUseCaseFakeImpl(),
+                       observeAudio: ObserveAudioUseCaseFakeImpl()))
 }

@@ -8,6 +8,7 @@
 import Observation
 import SwiftUI
 import Foundation
+import AVFoundation
 
 @Observable
 @MainActor
@@ -17,23 +18,30 @@ final class HomeViewModel {
     @ObservationIgnored private let connectWithPeer: ConnectWithPeerUseCase
     @ObservationIgnored private let observePeers: ObservePeersUseCase
     @ObservationIgnored private let sendTestAudio: SendTestAudioUseCase
+    @ObservationIgnored private let observeAudio: ObserveAudioUseCase
     private var peersTask: Task<Void, Never>?
+    private var incomingAudioTask: Task<Void, Never>?
+    private var player: AVAudioPlayer?
     
     var isLoading = false
     var error: String?
     var peers: [PeerUI] = []
     var hasConnectedPeer: Bool { peers.contains(where: { $0.isConnected }) }
+    var latestReceivedAudio: Data?
+    var hasAudio: Bool { latestReceivedAudio != nil }
     
     init(router: Router,
          startObservingPeers: StartObservingPeersUseCase,
          observePeers: ObservePeersUseCase,
          connectWithPeer: ConnectWithPeerUseCase,
-         sendTestAudio: SendTestAudioUseCase) {
+         sendTestAudio: SendTestAudioUseCase,
+         observeAudio: ObserveAudioUseCase) {
         self.router = router
         self.startObservingPeers = startObservingPeers
         self.observePeers = observePeers
         self.connectWithPeer = connectWithPeer
         self.sendTestAudio = sendTestAudio
+        self.observeAudio = observeAudio
     }
 
     func willAppear() {
@@ -48,11 +56,22 @@ final class HomeViewModel {
                 self.peers = items.map { .init(id: $0.id, isConnected: $0.isConnected) }
             }
         }
+        
+        incomingAudioTask?.cancel()
+        incomingAudioTask = Task { [weak self] in
+            guard let self else { return }
+            for await data in observeAudio.execute() {
+                self.latestReceivedAudio = data
+            }
+        }
     }
 
     func didDisappear() {
         peersTask?.cancel()
         peersTask = nil
+        
+        incomingAudioTask?.cancel()
+        incomingAudioTask = nil
     }
     
     func peerIdClicked(_ peerId: String) {
@@ -80,5 +99,17 @@ final class HomeViewModel {
                 self.error = error.localizedDescription
             }
         }
+    }
+    
+    func playReceivedAudioTapped() {
+        guard let audio = latestReceivedAudio else { return }
+        
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .default, options: [])
+        try? session.setActive(true, options: [])
+
+        player = try? AVAudioPlayer(data: audio)
+        player?.prepareToPlay()
+        player?.play()
     }
 }

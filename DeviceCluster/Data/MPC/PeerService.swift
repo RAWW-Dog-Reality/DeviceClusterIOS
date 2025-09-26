@@ -16,6 +16,7 @@ protocol PeerService {
     func connect(with peerID: String) async throws
     func peersStream() -> AsyncStream<[PeerDTO]>
     func sendDataToConnectedPeers(_ data: Data) throws
+    func incomingDataStream() -> AsyncStream<Data>
 }
 
 @MainActor
@@ -24,6 +25,8 @@ final class PeerServiceImpl: NSObject, PeerService, ObservableObject {
     private var session: MCSession?
     private var advertiser: MCNearbyServiceAdvertiser?
     private var browser: MCNearbyServiceBrowser?
+    
+    private let incomingDataSubject = PassthroughSubject<Data, Never>()
 
     @Published private var peers: [PeerDTO] = []
     
@@ -91,6 +94,17 @@ final class PeerServiceImpl: NSObject, PeerService, ObservableObject {
     func peersStream() -> AsyncStream<[PeerDTO]> {
         AsyncStream { continuation in
             let cancellable = $peers.sink { value in
+                continuation.yield(value)
+            }
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+    
+    func incomingDataStream() -> AsyncStream<Data> {
+        AsyncStream { continuation in
+            let cancellable = incomingDataSubject.sink { value in
                 continuation.yield(value)
             }
             continuation.onTermination = { _ in
@@ -174,9 +188,9 @@ extension PeerServiceImpl: MCSessionDelegate {
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
         Logger.log("Received data from peer=\(peerID.displayName)")
+        incomingDataSubject.send(data)
     }
     func session(_ session: MCSession, didReceive stream: InputStream, withName: String, fromPeer: MCPeerID) { }
     func session(_ session: MCSession, didStartReceivingResourceWithName: String, fromPeer: MCPeerID, with: Progress) { }
     func session(_ session: MCSession, didFinishReceivingResourceWithName: String, fromPeer: MCPeerID, at: URL?, withError: Error?) { }
 }
-

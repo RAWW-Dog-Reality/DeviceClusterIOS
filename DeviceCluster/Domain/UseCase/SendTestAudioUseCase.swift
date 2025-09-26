@@ -20,6 +20,7 @@ final class SendTestAudioUseCaseImpl: SendTestAudioUseCase {
             throw DomainError.generic
         }
         let data = try Data(contentsOf: url)
-        try peerRepository.sendDataToConnectedPeers(data)
+        let wrapped = PayloadDTO(data: data, type: .audio).encode()
+        try peerRepository.sendDataToConnectedPeers(wrapped)
     }
 }
